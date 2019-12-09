@@ -4,6 +4,23 @@
 #include <vector>
 #include <algorithm>
 
+void printVectorVert(std::vector<long long> vec)
+{
+    for (auto i : vec)
+    {
+        std::cout << i << '\n';
+    }
+}
+
+void printVectorHori(std::vector<long long> vec)
+{
+    for (auto i : vec)
+    {
+        std::cout << i << ' ';
+    }
+    std::cout << '\n';
+}
+
 // Split the intcode into its opcode and possible parameters
 std::vector<long long> splitIntcode(long long intcode)
 {
@@ -20,19 +37,34 @@ std::vector<long long> splitIntcode(long long intcode)
     return splitIntcode;
 }
 
-long long amplifierController(std::vector<long long> &v_in, int phase_setting, int input_signal)
+int main(int argc, char *argv[])
 {
-    std::vector<int> inputs;
-    inputs.push_back(phase_setting);
-    inputs.push_back(input_signal);
+    std::string line;
+    std::ifstream inputFile;
+    std::vector<long long> v;
 
-    long long result;
+    // Read input file
+    inputFile.open(argv[1]);
+
+    if (inputFile.is_open())
+    {
+        while (getline(inputFile, line, ','))
+        {
+            v.push_back(stoll(line));
+        }
+        inputFile.close();
+    }
+
+    for (int i = v.back(); i < 512000; i++)
+    {
+        v.push_back(0);
+    }
 
     long long relative_base = 0;
     long long temp_input = 0;
     for (int i = 0;;)
     {
-        std::vector<long long> intcode = splitIntcode(v_in[i]);
+        std::vector<long long> intcode = splitIntcode(v[i]);
 
         /* Parameters */
         // Calculate param1
@@ -43,15 +75,15 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
             {
             // Position mode
             case 0:
-                param1 = v_in[v_in[i + 1]];
+                param1 = v[v[i + 1]];
                 break;
             // Immediate mode
             case 1:
-                param1 = v_in[i + 1];
+                param1 = v[i + 1];
                 break;
             // Relative mode
             case 2:
-                param1 = v_in[v_in[i + 1] + relative_base];
+                param1 = v[v[i + 1] + relative_base];
                 break;
             }
         }
@@ -63,7 +95,7 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
             {
             // Position mode
             case 0:
-                param1 = v_in[i + 1];
+                param1 = v[i + 1];
                 break;
             // Immediate mode
             case 1:
@@ -71,7 +103,7 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
                 break;
             // Relative mode
             case 2:
-                param1 = v_in[i + 1] + relative_base;
+                param1 = v[i + 1] + relative_base;
                 break;
             }
         }
@@ -82,26 +114,26 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
         {
         // Position mode
         case 0:
-            param2 = v_in[v_in[i + 2]];
+            param2 = v[v[i + 2]];
             break;
         // Immediate mode
         case 1:
-            param2 = v_in[i + 2];
+            param2 = v[i + 2];
             break;
         // Relative mode
         case 2:
-            param2 = v_in[v_in[i + 2] + relative_base];
+            param2 = v[v[i + 2] + relative_base];
             break;
         }
 
         // Calculate param3
-        // When used param3 is an address, so must be used as v_in[param3]
+        // When used param3 is an address, so must be used as v[param3]
         long long param3;
         switch (intcode[3])
         {
         // Position mode
         case 0:
-            param3 = v_in[i + 3];
+            param3 = v[i + 3];
             break;
         // Immediate mode
         case 1:
@@ -109,7 +141,7 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
             break;
         // Relative mode
         case 2:
-            param3 = v_in[i + 3] + relative_base;
+            param3 = v[i + 3] + relative_base;
             break;
         }
 
@@ -118,24 +150,24 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
         {
         // Addition
         case 1:
-            v_in[param3] = param1 + param2;
+            v[param3] = param1 + param2;
             i += 4;
             break;
         // Multiplication
         case 2:
-            v_in[param3] = param1 * param2;
+            v[param3] = param1 * param2;
             i += 4;
             break;
         // Input
         case 3:
-            v_in[param1] = inputs[0];
-            inputs.erase(inputs.begin());
+            std::cout << "Input integer: ";
+            std::cin >> temp_input;
+            v[param1] = temp_input;
             i += 2;
             break;
         // Output
         case 4:
             std::cout << "Output integer: " << param1 << '\n';
-            result += param1;
             i += 2;
             break;
         // Jump-if-true
@@ -155,17 +187,17 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
         // Less than
         case 7:
             if (param1 < param2)
-                v_in[param3] = 1;
+                v[param3] = 1;
             else
-                v_in[param3] = 0;
+                v[param3] = 0;
             i += 4;
             break;
         // Equals
         case 8:
             if (param1 == param2)
-                v_in[param3] = 1;
+                v[param3] = 1;
             else
-                v_in[param3] = 0;
+                v[param3] = 0;
             i += 4;
             break;
         // Adjust relative base
@@ -180,73 +212,8 @@ long long amplifierController(std::vector<long long> &v_in, int phase_setting, i
     }
 
 endprogram:
-    return result;
-}
-
-int main()
-{
-    std::string line;
-    std::ifstream inputFile;
-    std::vector<long long> v;
-
-    // Read integer list into a vector
-    inputFile.open("test2.txt");
-
-    if (inputFile.is_open())
-    {
-        while (getline(inputFile, line, ','))
-        {
-            v.push_back(stoll(line));
-        }
-        inputFile.close();
-    }
-
-    for (int i = v.back(); i < 512000; i++)
-    {
-        v.push_back(0);
-    }
-
-    std::vector<int> sequence;
-    sequence.push_back(5);
-    sequence.push_back(6);
-    sequence.push_back(7);
-    sequence.push_back(8);
-    sequence.push_back(9);
-
-    int max_signal = 0;
-    std::vector<int> max_sequence;
-
-    std::sort(sequence.begin(), sequence.end());
-    do
-    {
-        int input_signal = 0;
-        long long temp;
-        for (;;)
-        {
-            for (auto i : sequence)
-            {
-                temp = amplifierController(v, i, input_signal);
-                input_signal = temp;
-            }
-        }
-        if (input_signal > max_signal)
-        {
-            max_signal = input_signal;
-            max_sequence = sequence;
-        }
-
-    } while (std::next_permutation(sequence.begin(), sequence.end()));
-
-    for (auto i : max_sequence)
-    {
-        std::cout << i << ' ';
-    }
-
-    std::cout << '\n';
-    std::cout << max_signal << '\n';
-
     return 0;
 }
 
-// Part One Correct Answer: 277328
-// Part Two Correct Answer:
+// Part One Correct Answer: 3742852857
+// Part Two Correct Answer: 73439
