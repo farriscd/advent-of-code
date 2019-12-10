@@ -9,9 +9,20 @@ void printImage(std::vector<int> image_layer)
     int w = 0;
     for (auto j : image_layer)
     {
-        std::cout << j;
-        w++;
-        if (w == 25)
+
+        if (w < 24)
+        {
+            if (j == 0)
+            {
+                std::cout << " ";
+            }
+            else
+            {
+                std::cout << "X";
+            }
+            w++;
+        }
+        else
         {
             std::cout << '\n';
             w = 0;
@@ -24,49 +35,45 @@ int main()
 {
     std::string line;
     std::ifstream inputFile;
+    std::vector<std::string> inputImage;
     std::vector<std::vector<int>> image;
 
-    inputFile.open("input.txt");
+    inputFile.open("formattedinput.txt");
 
     if (inputFile.is_open())
     {
         while (getline(inputFile, line))
         {
+            inputImage.push_back(line);
         }
         inputFile.close();
     }
 
     std::vector<int> temp;
 
-    int j = 0;
-    for (int i = 1; i < 15000; i++)
+    for (auto i : inputImage)
     {
-        if (j == 150)
+        for (int j = 0; j < i.length(); j++)
         {
-            j = 0;
-            image.push_back(temp);
-            temp.clear();
+            int pix = i[j] - '0';
+            temp.push_back(pix);
         }
-
-        int pix = line[i] - '0';
-        temp.push_back(pix);
-        j++;
+        image.push_back(temp);
+        temp.clear();
     }
 
     std::vector<int> visible_layer;
     visible_layer = image[0];
 
-    printImage(visible_layer);
+    std::cout << '\n';
 
-    for (auto i : image)
+    for (auto layer : image)
     {
-
-        for (int j = 0; j < 150; j++)
+        for (int pixel = 0; pixel < 150; pixel++)
         {
-            if (visible_layer[j] == 2 && i[j] != 2)
+            if (visible_layer[pixel] == 2)
             {
-                std::cout << visible_layer[j] << "->" << i[j] << '\n';
-                visible_layer[j] = i[j];
+                visible_layer[pixel] = layer[pixel];
             }
         }
     }
@@ -77,4 +84,4 @@ int main()
 }
 
 // Part One Correct Answer: 1560
-// Part Two Correct Answer:
+// Part Two Correct Answer: "UGCUH"
